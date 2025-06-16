@@ -14,10 +14,6 @@
       @include('home.room', ['rooms' => $rooms])
       <!-- end our_room -->
       <!-- gallery -->
-      @include('home.gallery')
-      <!-- end gallery -->
-      <!-- blog -->
-      @include('home.blog')
       <!-- end blog -->
       <!--  contact -->
       @include('home.contact')

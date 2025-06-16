@@ -11,6 +11,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\CartController;
 use App\Models\Hotel;
 use App\Models\Room;
+use Illuminate\Support\Facades\Log;
 
 
 
@@ -81,6 +82,10 @@ Route::get('/payment', [BookingController::class, 'showPayment'])->name('payment
 //VNPAY
 Route::post('/payment/vnpay', [PaymentController::class, 'payWithVnpay'])->name('payment.vnpay');
 Route::get('/payment/vnpay/callback', [PaymentController::class, 'vnpayCallback'])->name('payment.vnpay.callback');
+Route::get('/payment/vnpay/callback', function (\Illuminate\Http\Request $request) {
+    Log::info('🔥 ĐÃ VÀO ĐƯỢC CALLBACK', $request->all());
+    return 'Callback test OK';
+});
 //VNPAY - CART
 Route::post('/cart/payment/vnpay', [PaymentController::class, 'payWithVnpayFromCart'])->name('payment.vnpay.cart');
 Route::get('/payment/vnpay/callback/cart', [PaymentController::class, 'vnpayCallbackCart'])->name('payment.vnpay.callback.cart');

@@ -19,6 +19,7 @@ class PaymentController extends Controller
 {
     public function payWithVnpay(Request $request)
     {
+        Log::info('✅ ĐÃ VÀO VNPAY  [DIRECT BOOKING]');
         $cacheKey = $request->input('cache_key');
         $booking = Cache::get($cacheKey);
 
@@ -27,14 +28,13 @@ class PaymentController extends Controller
         }
 
         $orderId = $cacheKey; // Dùng cache key làm TxnRef
-        $inputData["vnp_TxnRef"] = $orderId;
         $amount = $booking['total_price'];
 
         $vnp_TmnCode = config('services.vnpay.tmn_code');
         $vnp_HashSecret = config('services.vnpay.hash_secret');
         $vnp_Url = config('services.vnpay.url');
-        $vnp_Returnurl = "https://893c-2405-4802-1c60-4f60-579-da2b-ae50-c070.ngrok-free.app/payment/vnpay/callback";
-        Log::info('Redirecting to VNPAY: ' . $vnp_Url);
+        $vnp_Returnurl = config('services.vnpay.return_url');
+        $vnp_IpAddr = request()->ip();
 
         $inputData = [
             "vnp_Version" => "2.1.0",
@@ -56,55 +56,50 @@ class PaymentController extends Controller
         foreach ($inputData as $key => $value) {
             $hashdata .= ($hashdata ? '&' : '') . urlencode($key) . '=' . urlencode($value);
         }
+
         $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
-        $vnp_Url .= "?" . http_build_query($inputData) . '&vnp_SecureHash=' . $vnpSecureHash;
+        $finalUrl = $vnp_Url . '?' . http_build_query($inputData) . '&vnp_SecureHash=' . $vnpSecureHash;
 
-        return redirect($vnp_Url);
+        Log::info('✅ FINAL VNPAY URL:', ['url' => $finalUrl]);
+
+        return redirect($finalUrl);
     }
-
 
     public function vnpayCallback(Request $request)
     {
-        Log::info('=== BẮT ĐẦU VNPAY CALLBACK ===');
+        Log::info('🔥 [REAL CALLBACK] Đã vào vnpayCallback', $request->all());
 
         $inputData = $request->all();
-        Log::info('1. Data nhận được từ VNPAY:', $inputData);
+        Log::info('1. Dữ liệu nhận từ VNPAY:', $inputData);
 
         $vnp_HashSecret = config('services.vnpay.hash_secret');
         $vnp_SecureHash = $inputData['vnp_SecureHash'] ?? '';
 
-        Log::info('2. Hash Secret có tồn tại:', ['exists' => !empty($vnp_HashSecret)]);
-
-        // Kiểm tra key bắt buộc
         if (!isset($inputData['vnp_TxnRef'], $inputData['vnp_ResponseCode'])) {
-            Log::error('3. THIẾU DỮ LIỆU BẮT BUỘC');
+            Log::error('❌ THIẾU DỮ LIỆU BẮT BUỘC');
             return view('home.payment_failed', ['message' => 'Thiếu dữ liệu cần thiết từ VNPAY.']);
         }
-        Log::info('3. Dữ liệu bắt buộc OK');
 
-        // Lấy cache key
         $cacheKey = $inputData['vnp_TxnRef'];
         $booking = Cache::get($cacheKey);
 
-        Log::info('4. Cache check:', [
+        Log::info('2. Cache key & booking:', [
             'cache_key' => $cacheKey,
             'booking_exists' => !empty($booking),
-            'booking_data' => $booking
         ]);
 
-        // Xác minh chữ ký - SỬA LẠI ĐỒNG BỘ VỚI payWithVnpay
+        // Xác minh chữ ký
         $tempData = $inputData;
         unset($tempData['vnp_SecureHash'], $tempData['vnp_SecureHashType']);
         ksort($tempData);
-
-        // DÙNG CÙNG CÁCH VỚI payWithVnpay
         $hashdata = '';
         foreach ($tempData as $key => $value) {
             $hashdata .= ($hashdata ? '&' : '') . urlencode($key) . '=' . urlencode($value);
         }
+
         $secureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
 
-        Log::info('5. Xác minh chữ ký:', [
+        Log::info('3. Xác minh chữ ký:', [
             'hash_data' => $hashdata,
             'computed_hash' => $secureHash,
             'received_hash' => $vnp_SecureHash,
@@ -112,58 +107,41 @@ class PaymentController extends Controller
         ]);
 
         if ($secureHash !== $vnp_SecureHash) {
-            Log::error('6. CHỮ KÝ KHÔNG HỢP LỆ');
+            Log::error('❌ CHỮ KÝ KHÔNG HỢP LỆ');
             return view('home.payment_failed', ['message' => 'Chữ ký không hợp lệ']);
         }
-        Log::info('6. Chữ ký hợp lệ');
-
-        // Kiểm tra response code
-        Log::info('7. Response code check:', [
-            'code' => $inputData['vnp_ResponseCode'],
-            'is_success' => $inputData['vnp_ResponseCode'] === '00'
-        ]);
 
         if ($inputData['vnp_ResponseCode'] !== '00') {
-            Log::error('8. GIAO DỊCH KHÔNG THÀNH CÔNG', ['code' => $inputData['vnp_ResponseCode']]);
+            Log::error('❌ GIAO DỊCH KHÔNG THÀNH CÔNG', ['code' => $inputData['vnp_ResponseCode']]);
             return view('home.payment_failed', ['message' => 'Giao dịch không thành công']);
         }
-        Log::info('8. Giao dịch thành công');
 
-        // Kiểm tra booking cache
         if (!$booking) {
-            Log::error('9. KHÔNG TÌM THẤY BOOKING TRONG CACHE');
-            return view('home.payment_failed', ['message' => 'Không tìm thấy dữ liệu booking từ cache.']);
+            Log::error('❌ KHÔNG TÌM THẤY BOOKING TRONG CACHE');
+            return view('home.payment_failed', ['message' => 'Không tìm thấy dữ liệu booking.']);
         }
-        Log::info('9. Booking cache OK');
 
-        // Kiểm tra duplicate
         if (\App\Models\Payment::where('txn_ref', $cacheKey)->exists()) {
-            Log::info('10. GIAO DỊCH ĐÃ TỒN TẠI - REDIRECT');
+            Log::info('⏩ GIAO DỊCH ĐÃ XỬ LÝ TRƯỚC - REDIRECT');
             return redirect()->route('payment.success.existing', ['txn_ref' => $cacheKey]);
         }
-        Log::info('10. Giao dịch mới');
 
-        Log::info('11. BẮT ĐẦU LƯU DATABASE');
-        DB::beginTransaction();
+        // BẮT ĐẦU LƯU DB
         try {
-            // Tạo booking
-            Log::info('11a. Tạo booking...');
+            DB::beginTransaction();
+
             $bookingModel = \App\Models\Booking::create([
                 'user_id' => Auth::id(),
                 'hotel_id' => $booking['hotel_id'],
                 'guest_name' => $booking['fullname'],
                 'guest_email' => $booking['email'],
                 'guest_phone' => $booking['phone'],
-
                 'number_of_guests' => $booking['number_of_guests'] ?? 1,
                 'total_price' => $booking['total_price'],
                 'status' => 'confirmed',
                 'payment_status' => 'paid',
             ]);
-            Log::info('11a. Booking tạo thành công', ['id' => $bookingModel->id]);
 
-            // Tạo booking detail
-            Log::info('11b. Tạo booking detail...');
             \App\Models\BookingDetail::create([
                 'booking_id' => $bookingModel->id,
                 'room_id' => $booking['room_id'],
@@ -176,31 +154,22 @@ class PaymentController extends Controller
                 'checkin' => $booking['checkin_date'],
                 'checkout' => $booking['checkout_date'],
             ]);
-            Log::info('11b. Booking detail tạo thành công');
 
-            // 11c. Cập nhật room_availability
-            Log::info('11c. Cập nhật room_availability...');
             $start = \Carbon\Carbon::parse($booking['checkin_date']);
             $end = \Carbon\Carbon::parse($booking['checkout_date']);
-
             for ($date = $start->copy(); $date->lt($end); $date->addDay()) {
                 \App\Models\RoomAvailability::where('room_id', $booking['room_id'])
                     ->where('date', $date->toDateString())
                     ->decrement('available_rooms', 1);
             }
-            Log::info('11c. Cập nhật room_availability hoàn tất');
 
-            // Parse ngày giờ thanh toán
+            $paidAt = now();
             try {
                 $paidAt = \Carbon\Carbon::createFromFormat('YmdHis', $inputData['vnp_PayDate']);
-                Log::info('11c. Parse date thành công', ['date' => $paidAt]);
             } catch (\Exception $e) {
-                Log::warning('11c. Parse date lỗi, dùng fallback', ['error' => $e->getMessage()]);
-                $paidAt = now();
+                Log::warning('Parse date lỗi, dùng now()', ['error' => $e->getMessage()]);
             }
 
-            // Tạo payment record
-            Log::info('11d. Tạo payment record...');
             \App\Models\Payment::create([
                 'booking_id' => $bookingModel->id,
                 'txn_ref' => $inputData['vnp_TxnRef'] ?? '',
@@ -212,57 +181,44 @@ class PaymentController extends Controller
                 'status' => 'success',
                 'paid_at' => $paidAt,
             ]);
-            Log::info('11d. Payment record tạo thành công');
 
-            Log::info('11e. Xử lí coupon');
+            // Coupon xử lý
             $couponData = session('applied_coupon');
-
             if ($couponData) {
-                Log::info('11e. Ghi nhận mã giảm giá đã dùng', $couponData);
-
                 \App\Models\CouponUsage::updateOrCreate(
                     ['coupon_id' => $couponData['coupon_id'], 'user_id' => Auth::id()],
                     ['used_count' => DB::raw('used_count + 1')]
                 );
-
                 \App\Models\Coupon::where('id', $couponData['coupon_id'])->increment('used_count');
-
-                // Xóa coupon khỏi session
                 session()->forget('applied_coupon');
             }
-            Log::info('11e. Coupon xử lí thành công');
 
             DB::commit();
-            Log::info('12. DATABASE COMMIT THÀNH CÔNG');
 
-            // Gửi email
             try {
-                Log::info('13. Gửi email...');
                 $bookingWithDetails = $bookingModel->load('booking_details.hotel');
                 Mail::to($booking['email'])->send(new BookingSuccessMail($bookingWithDetails));
-                Log::info('13. Email gửi thành công');
             } catch (\Exception $e) {
-                Log::error('13. Lỗi gửi email: ' . $e->getMessage());
+                Log::warning('Không gửi được mail: ' . $e->getMessage());
             }
 
             Cache::forget($cacheKey);
-            Log::info('14. Xóa cache thành công');
 
-            Log::info('15. REDIRECT ĐẾN SUCCESS PAGE', ['booking_id' => $bookingModel->id]);
             return redirect()->route('payment.success', ['booking_id' => $bookingModel->id]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('LỖI XỬ LÝ GIAO DỊCH:', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
+            Log::error('❌ LỖI XỬ LÝ CALLBACK', [
+                'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
             return view('home.payment_failed', ['message' => 'Lỗi xử lý giao dịch: ' . $e->getMessage()]);
         }
-
-        Log::info('=== KẾT THÚC VNPAY CALLBACK ===');
     }
+
+
+
+
+
     //Cart payment
     // public function payWithVnpayFromCart(Request $request)
     // {
