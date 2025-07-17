@@ -20,8 +20,7 @@ return new class extends Migration
             $table->string('guest_email');
             $table->string('guest_phone')->nullable();
 
-            $table->date('checkin_date');
-            $table->date('checkout_date');
+
 
             $table->integer('number_of_guests');
 

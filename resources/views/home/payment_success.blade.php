@@ -57,7 +57,22 @@
                           @endif
                       @endauth
                     @endif
-
         </div>
-
+</div>
+<div class="container py-5">
+    <div class="alert alert-success text-center">
+        <h4 class="alert-heading">🎉 Đặt phòng thành công!</h4>
+        <p>Thông tin chi tiết về phòng đã được gửi qua email của bạn.</p>
+        <hr>
+        <p class="mb-0">Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi.</p>
+        <p class="mb-0">Bạn có thể xem đơn hàng của mình thông qua giỏ hàng</p>
     </div>
+
+    <div class="text-center mt-4">
+        <a href="{{ route('cart.view') }}?tab=history" class="btn btn-primary">
+            Xem lịch sử đặt phòng
+        </a>
+    </div>
+</div>
+
+

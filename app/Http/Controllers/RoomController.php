@@ -8,6 +8,7 @@ use App\Models\Room;
 use App\Models\Hotel;
 use App\Models\RoomImage;
 use Illuminate\Support\Facades\DB;
+use App\Models\Feedback;
 
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -20,7 +21,7 @@ class RoomController extends Controller
     {
         return view('admin.create_room');
     }
-    // Thêm dòng này nếu chưa use
+
 
     public function add_room(Request $request)
     {
@@ -57,7 +58,7 @@ class RoomController extends Controller
                     ],
                     [
                         'available_rooms' => $room->total_rooms ?? 1,
-                        'is_available' => $room->status === 'active' ? 1 : 0,
+                        'is_available' => true,
                         'price_override' => null,
                     ]
                 );
@@ -235,6 +236,10 @@ class RoomController extends Controller
                 'rooms.price'
             )
             ->get();
+        $feedbacks = Feedback::where('hotel_id', $hotelId)
+            ->with(['user', 'bookingDetail.room']) // nếu cần load thêm thông tin
+            ->latest()
+            ->get();
 
 
         //  Gắn ảnh cho từng phòng
@@ -257,6 +262,7 @@ class RoomController extends Controller
             'room_type' => $roomType,
             'bannerImages' => $bannerImages,
             'hotel' => $hotel,
+            'feedbacks' => $feedbacks,
         ])->with('message', 'Danh sách phòng đã được tải!');
     }
 
@@ -267,6 +273,7 @@ class RoomController extends Controller
 
     public function roomsByHotel($id)
     {
+
         $hotel = Hotel::findOrFail($id);
 
 
@@ -282,11 +289,15 @@ class RoomController extends Controller
             ->inRandomOrder()
             ->take(6)
             ->get();
+        $feedbacks = Feedback::where('hotel_id', $id)
+            ->with(['user', 'bookingDetail.room']) // nếu cần load thêm thông tin
+            ->latest()
+            ->get();
 
-        return view('home.rooms_by_hotel', compact('hotel', 'rooms', 'roomImages'));
+        return view('home.rooms_by_hotel', compact('hotel', 'rooms', 'roomImages', 'feedbacks'));
     }
-    public function unavailable()
+    public function unavailableToBook()
     {
-        return view('home.unavailable');
+        return view('home.no_room');
     }
 }

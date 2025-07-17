@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Room;
 use App\Models\Hotel;
 use App\Models\RoomImage;
+use App\Models\Feedback;
 use Illuminate\Support\Facades\DB;
 
 class HotelController extends Controller
@@ -186,25 +187,49 @@ class HotelController extends Controller
     {
         $city = urldecode($city);
 
+        $minPrice = $request->input('min_price');
+        $maxPrice = $request->input('max_price');
+
         $hotels = Hotel::where('hotel_city', $city)
-            ->with('rooms')
+            ->with('rooms') // lấy phòng để tính trung bình giá
             ->get()
             ->map(function ($hotel) {
-                $avg = $hotel->rooms->avg('price') ?? 0;
-                $hotel->average_price = round($avg);
+                // Tính trung bình giá phòng
+                $avgPrice = $hotel->rooms->avg('price') ?? 0;
+                $hotel->average_price = round($avgPrice);
+
+                // Tính trung bình rating từ bảng feedbacks
+                $avgRating = Feedback::where('hotel_id', $hotel->id)->avg('rating') ?? 0;
+                $hotel->average_rating = round($avgRating, 1);
+
                 return $hotel;
             })
-            ->filter(function ($hotel) use ($request) {
-                if ($request->min_price && $hotel->average_price < $request->min_price) {
+            ->filter(function ($hotel) use ($minPrice, $maxPrice) {
+                if (!is_null($minPrice) && $hotel->average_price < $minPrice) {
                     return false;
                 }
-                if ($request->max_price && $hotel->average_price > $request->max_price) {
+                if (!is_null($maxPrice) && $hotel->average_price > $maxPrice) {
                     return false;
                 }
                 return true;
             })
-            ->values(); // Reset key
+            ->values(); // reset lại index sau filter
 
         return view('home.hotels_by_city', compact('hotels', 'city'));
+    }
+
+    public function searchHotelsByCity(Request $request, $city)
+    {
+        $query = $request->input('query');
+
+        $results = Hotel::where('hotel_city', urldecode($city))
+            ->where(function ($q) use ($query) {
+                $q->where('hotel_name', 'LIKE', '%' . $query . '%')
+                    ->orWhere('hotel_address', 'LIKE', '%' . $query . '%');
+            })
+            ->limit(10)
+            ->get(['id', 'hotel_name', 'hotel_address']);
+
+        return response()->json($results);
     }
 }

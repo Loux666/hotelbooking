@@ -2,14 +2,18 @@
 
 
 @php
-    $nights = \Carbon\Carbon::parse($checkin)->diffInDays(\Carbon\Carbon::parse($checkout));
-    $pricePerNight = $room->price; // Giá 1 đêm từ room
+    use Carbon\Carbon;
+
+    $nights = Carbon::parse($checkin)->diffInDays(Carbon::parse($checkout));
+    $pricePerNight = $room->price;
     $totalPrice = $nights * $pricePerNight;
     $vat = $totalPrice * 0.10;
     $service = 100000;
-    $discount = session('applied_coupon.discount') ?? 0;
-    $finalTotal = $totalPrice + $vat + $service - $discount;
 
+    $appliedCoupon = session('applied_coupon');
+    $discount = (is_array($appliedCoupon) && isset($appliedCoupon['discount'])) ? $appliedCoupon['discount'] : 0;
+
+    $finalTotal = $totalPrice + $vat + $service - $discount;
 @endphp
 
 <div class="booking-page">
@@ -74,22 +78,22 @@
         </div>
 
     </div>
-    <div class="booking-holding">
 
+    <div class="booking-holding" style="text-align: center; margin-bottom: 20px;background-color: #bec19f; padding: 10px; border-radius: 5px;">
+        <span id="hold-timer" >Chúng tôi đang giữ phòng cho bạn: <strong><span id="countdown">15:00</span></strong></span>
     </div>
     <div class="booking-content">
         <div class="booking-form">
             <h2 class="form-title">Thông tin khách hàng</h2>
-            <form id="room-booking-form" class="room-booking-form" method="POST" action="{{ route('bookings.temp') }}">
+            <form id="room-booking-form" class="room-booking-form" method="POST" action="{{ route('booking.storeTmp') }}">
             @csrf
 
-            
             <div class="form-group">
                 <label class="form-label" for="fullname">Họ và tên *</label>
                 <input 
                     type="text" 
-                    id="fullname" 
-                    name="fullname" 
+                    id="guest_name" 
+                    name="guest_name" 
                     class="form-input" 
                     placeholder="Nhập họ và tên đầy đủ"
                     value="{{ old('fullname', Auth::user()->name ?? '') }}"
@@ -102,8 +106,8 @@
                     <label class="form-label" for="email">Email *</label>
                     <input 
                         type="email" 
-                        id="email" 
-                        name="email" 
+                        id="guest_email" 
+                        name="guest_email" 
                         class="form-input" 
                         placeholder="example@email.com"
                         value="{{ old('email', Auth::user()->email ?? '') }}"
@@ -112,7 +116,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="phone">Số điện thoại *</label>
-                    <input type="tel" id="phone" name="phone" class="form-input" placeholder="0123456789" required>
+                    <input type="tel" id="guest_phone" name="guest_phone" class="form-input" placeholder="0123456789" required>
                 </div>
             </div>
 
@@ -124,15 +128,14 @@
             <!-- Hidden input cho dữ liệu booking -->
             <input type="hidden" name="checkin_date" value="{{ $checkin }}">
             <input type="hidden" name="checkout_date" value="{{ $checkout }}">
-            <input type="hidden" name="hotel_id" value="{{ $hotel->id }}">
             <input type="hidden" name="room_id" value="{{ $room->id }}">
             <input type="hidden" name="room_name" value="{{ $room->room_name }}">
             <input type="hidden" name="room_price" value="{{ $room->price }}">
-
-            
-
+            <input type="hidden" name="guest_number" value="{{ $guests }}">
             <input type="hidden" name="nights" value="{{ $nights }}">
-            <input type="hidden" name="total_price" value="{{ $finalTotal }}">
+            <input type="hidden" name="hotel_id" value="{{ $hotel->id }}">
+            <input type="hidden" name="total_price" value="{{ $totalPrice + $vat + $service }}">
+            
 
             <!-- Nút xác nhận -->
             <div class="submit-form-btn">
@@ -243,10 +246,10 @@
                         <span>{{ number_format($vat, 0, ',', '.') }} VNĐ</span>
                     </div>
 
-                    @if(session('applied_coupon'))
+                    @if(isset($appliedCoupon['code']) && $discount > 0)
                         <div class="price-item discount">
-                            <span>Ưu đãi ({{ session('applied_coupon.code') }})</span>
-                            <span class="text-success">-{{ number_format($discount) }} VNĐ</span>
+                            <span>Ưu đãi ({{ $appliedCoupon['code'] }})</span>
+                            <span class="text-success">-{{ number_format($discount, 0, ',', '.') }} VNĐ</span>
                         </div>
                     @endif
 
@@ -256,19 +259,20 @@
                     </div>
                 </div>
 
+
                 <!-- Coupon Form -->
                 <div class="coupon-section mt-3">
-                    <form method="POST" action="{{ route('booking.applyCoupon') }}" class="coupon-input">
+                    <form method="POST" action="{{ route('booking.applyCoupon') }}" class="coupon-input" id="apply-coupon-form">
                         @csrf
                         <input type="hidden" name="total_price" value="{{ $totalPrice + $vat + $service }}">
                         <input type="text" name="coupon_code" placeholder="Nhập mã giảm giá" class="form-control @error('coupon_code') is-invalid @enderror">
                         <button type="submit" class="coupon-btn mt-2">Áp dụng</button>
                     </form>
 
-                    @if(session('applied_coupon'))
+                    @if(isset($appliedCoupon['code']) && $discount > 0)
                         <div class="mt-2 text-success">
-                            Mã "{{ session('applied_coupon.code') }}" đã được áp dụng:
-                            <strong>{{ number_format(session('applied_coupon.discount')) }}đ</strong>
+                            Mã "{{ $appliedCoupon['code'] }}" đã được áp dụng:
+                            <strong>{{ number_format($discount, 0, ',', '.') }}đ</strong>
                         </div>
                     @endif
 
@@ -284,13 +288,32 @@
                         </div>
                     @enderror
                 </div>
+                            </div>
+                    </div>
+                </div>
 
-            </div>
-    </div>
-</div>
+                <div class="modal fade" id="expiredModal"
+                tabindex="-1"
+                aria-labelledby="expiredModalLabel"
+                aria-hidden="true"
+                data-bs-backdrop="static"
+                data-bs-keyboard="false">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="expiredModalLabel">⏰ Hết thời gian giữ phòng</h5>
+                    </div>
+                    <div class="modal-body">
+                        Rất tiếc, bạn đã vượt quá thời gian giữ phòng tạm. Vui lòng quay lại và chọn phòng khác.
+                    </div>
+                    <div class="modal-footer">
+                        <button onclick="window.close()" class="btn btn-primary">Đóng tab & quay lại chọn phòng</button>
+                    </div>
+                    </div>
+                </div>
+                </div>
 
-
-<script>
+<script> //Validate
     document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('room-booking-form');
         const bookingBtn = document.getElementById('confirm-btn');
@@ -344,4 +367,36 @@
         });
     });
 </script>
+
+<script>
+    let countdownTime = 15 * 60; // 30 phút = 1800 giây
+    const countdownEl = document.getElementById('countdown');
+    const submitBtn = document.getElementById('submitBookingBtn');
+
+    const timer = setInterval(() => {
+        const minutes = Math.floor(countdownTime / 60);
+        const seconds = countdownTime % 60;
+
+        countdownEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+        if (countdownTime <= 0) {
+            clearInterval(timer);
+
+            // Disable nút submit
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.classList.add('btn-secondary');
+                submitBtn.classList.remove('btn-primary'); // hoặc class cũ
+                submitBtn.innerText = 'Hết thời gian giữ phòng';
+            }
+
+            // Hiện modal hết hạn
+            const modal = new bootstrap.Modal(document.getElementById('expiredModal'));
+            modal.show();
+        }
+
+        countdownTime--;
+    }, 1000);
+</script>
+
 

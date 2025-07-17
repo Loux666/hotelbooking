@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\Room;
 use App\Models\Booking;
 use App\Models\Coupon;
+use App\Models\BookingDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -63,15 +64,16 @@ class CartController extends Controller
         $userId = Auth::id();
         $today = now()->startOfDay();
 
+        // ===== Xử lý giỏ hàng =====
         $cartItems = Cart::with(['room.hotel'])
             ->where('user_id', $userId)
             ->get();
 
         foreach ($cartItems as $item) {
-            $checkin = Carbon::parse($item->checkin);
-            $checkout = Carbon::parse($item->checkout);
+            $checkin = Carbon::parse($item->checkin)->startOfDay();
+            $checkout = Carbon::parse($item->checkout)->startOfDay();
 
-            $item->is_expired = $checkin->lt($today);
+            $item->is_expired = $today->gte($checkout);
 
             if ($item->is_expired) {
                 $item->is_available_now = false;
@@ -90,14 +92,24 @@ class CartController extends Controller
 
             $item->price = $item->room->price;
         }
-        $bookings = Booking::where('user_id', Auth::id())
-            ->with(['booking_details.room.hotel']) // nhớ phải dùng y như này
+
+        // ===== Xử lý đơn đã đặt =====
+        $bookings = Booking::with(['booking_details.room.hotel'])
+            ->where('user_id', $userId)
+            ->whereIn('status', ['confirmed', 'cancelled'])
             ->latest()
             ->get();
 
+        // Tính xem có thể huỷ được hay không
+        foreach ($bookings as $booking) {
+            $booking->can_cancel = $booking->booking_details->every(function ($detail) {
+                return now()->lt(Carbon::parse($detail->checkin));
+            }) && $booking->status !== 'cancelled';
+        }
 
         return view('home.cart', compact('cartItems', 'bookings'));
     }
+
 
     public function verifyCart(Request $request)
     {
@@ -105,7 +117,11 @@ class CartController extends Controller
         $today = now()->startOfDay();
         $selectedIds = json_decode($request->input('selected_ids'), true);
 
+        Log::info('User ID:', ['user_id' => $userId]);
+        Log::info('Selected cart item IDs:', ['selected_ids' => $selectedIds]);
+
         if (empty($selectedIds)) {
+            Log::warning('No cart items selected.');
             return back()->with('error', 'Bạn chưa chọn phòng nào.');
         }
 
@@ -114,13 +130,23 @@ class CartController extends Controller
             ->whereIn('id', $selectedIds)
             ->get();
 
+        Log::info('Fetched cart items:', ['count' => $cartItems->count()]);
+
         $invalidItems = [];
 
         foreach ($cartItems as $item) {
-            $checkin = Carbon::parse($item->checkin);
-            $checkout = Carbon::parse($item->checkout);
+            $checkin = Carbon::parse($item->checkin)->startOfDay();
+            $checkout = Carbon::parse($item->checkout)->startOfDay();
 
-            if ($checkin->lt($today)) {
+            Log::info('Checking item:', [
+                'cart_id' => $item->id,
+                'room_id' => $item->room_id,
+                'checkin' => $checkin,
+                'checkout' => $checkout
+            ]);
+
+            if ($checkout->lte($today)) {
+                Log::warning('Invalid checkout date.', ['cart_id' => $item->id]);
                 $invalidItems[] = $item;
                 continue;
             }
@@ -135,81 +161,19 @@ class CartController extends Controller
                 ->exists();
 
             if ($unavailable) {
+                Log::warning('Room unavailable.', ['cart_id' => $item->id]);
                 $invalidItems[] = $item;
             }
         }
 
         if (count($invalidItems) > 0) {
+            Log::info('Some cart items are invalid.', ['invalid_count' => count($invalidItems)]);
             return back()->with('modal_error', 'Một số phòng không còn khả dụng.');
         }
 
-        // Reset tất cả is_selected về false trước khi cập nhật lại
-        Cart::where('user_id', $userId)->update(['is_selected' => false]);
-
-        // Cập nhật những cái được chọn thành true
-        Cart::where('user_id', $userId)
-            ->whereIn('id', $selectedIds)
-            ->update(['is_selected' => true]);
+        Log::info('All selected items are valid. Saving to session.');
+        session()->put('selected_cart_ids', $selectedIds);
 
         return redirect()->route('cart_booking.form');
-    }
-
-
-    public function bookingwithCart()
-    {
-        $userId = Auth::id();
-        $bookingData = Cart::with('room.hotel')
-            ->where('user_id', $userId)
-            ->where('is_selected', true)
-            ->get();
-
-        if ($bookingData->isEmpty()) {
-            return redirect()->route('cart.view')->with('error', 'Không có phòng nào được chọn.');
-        }
-
-        $detailedRooms = [];
-        $finalTotal = 0;
-
-        foreach ($bookingData as $item) {
-
-            $checkin = Carbon::parse($item->checkin);
-            $checkout = Carbon::parse($item->checkout);
-            $nights = $checkin->diffInDays($checkout);
-
-            $pricePerNight = $item->price_at_time ?? $item->room->price; // Ưu tiên giá lúc thêm vào giỏ
-            $totalPrice = $nights * $pricePerNight;
-            $vat = $totalPrice * 0.10;
-            $service = 100000;
-            $roomTotal = $totalPrice + $vat + $service;
-
-            $finalTotal += $roomTotal;
-            Log::info('[CHECK CART ITEM]', [
-                'room_id' => $item->room_id,
-                'checkin' => $item->checkin,
-                'checkout' => $item->checkout,
-                'nights' => $nights,
-
-                'price_per_night' => $pricePerNight,
-                'total_price' => $totalPrice,
-                'vat' => $vat,
-                'service' => $service,
-                'room_total' => $roomTotal,
-            ]);
-
-            $detailedRooms[] = [
-                'room' => $item->room,
-                'hotel' => $item->room->hotel,
-                'checkin' => $item->checkin,
-                'checkout' => $item->checkout,
-                'nights' => $nights,
-                'pricePerNight' => $pricePerNight,
-                'totalPrice' => $totalPrice,
-                'vat' => $vat,
-                'service' => $service,
-                'roomTotal' => $roomTotal,
-            ];
-        }
-        Log::info('[RENDERING paymentpage VIEW]');
-        return view('home.bookingwithCart', compact('detailedRooms', 'finalTotal'));
     }
 }

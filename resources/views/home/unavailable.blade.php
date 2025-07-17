@@ -25,12 +25,7 @@
                             <li class="nav-item">
                                 <a class="nav-link"style="font-size: 14px" href="{{url('coupon')}}">ưu đãi</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link" style="font-size: 14px" href="{{url('room')}}">Tìm phòng</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" style="font-size: 14px" href="contact.html">Liên hệ ngay</a>
-                            </li>
+                            
 
 
 

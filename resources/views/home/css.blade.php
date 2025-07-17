@@ -43,9 +43,8 @@
 
       <!-- CSS  nouiser loc theo gia tien-->
 <link href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css" rel="stylesheet">
-<!-- JS -->
 <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
 
 <!-- gg map api -->
-<script src="https://maps.googleapis.com/maps/api/AIzaSyCpt_7W56nMFcNV1i-mlm0qxn8weDmZzGU_bo&callback=initMap" async defer></script>
+
 

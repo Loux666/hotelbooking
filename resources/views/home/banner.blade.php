@@ -144,7 +144,7 @@
         });
     });
 </script>
-<script>
+<script> //validate
             document.addEventListener('DOMContentLoaded', function () {
                 const form = document.getElementById('first-form');
                 const modal = new bootstrap.Modal(document.getElementById('warningModal'));
@@ -175,16 +175,19 @@
                     }
                 });
             });
-        </script>
-
+</script>
 
 <script> //live search
+
    $(document).ready(function () {
+      console.log('✅ DOM đã sẵn sàng');
+      console.log('📦 #location có tồn tại?', $('#location').length);
+
       $('#location').on('keyup', function () {
          let query = $(this).val();
          if (query.length >= 1) {
                $.ajax({
-                  url: "{{ route('locations.search') }}",
+                  url: "{{ secure_url(route('locations.search', [], false)) }}",
                   method: 'GET',
                   data: { query: query },
                   success: function (data) {
@@ -210,6 +213,7 @@
                });
          } else {
                $('#locationSuggestions').empty();
+               console.log('❌ Query rỗng, xóa dropdown');
          }
       });
 
@@ -227,4 +231,5 @@
       });
    });
 </script>
+
 

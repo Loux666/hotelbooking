@@ -12,12 +12,12 @@ class Booking extends Model
         'guest_name',
         'guest_email',
         'guest_phone',
-        'checkin_date',
-        'checkout_date',
         'number_of_guests',
         'total_price',
         'status',
         'payment_status',
+        'expired_at',
+
     ];
 
 
@@ -39,6 +39,10 @@ class Booking extends Model
     }
     public function payments()
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasOne(Payment::class);
+    }
+    public function refundRequest()
+    {
+        return $this->hasOne(RefundRequest::class);
     }
 }

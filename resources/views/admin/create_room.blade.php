@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-  <head> 
+    <base href="/public">
     @include('admin.css')
 
     <style type="text/css">
@@ -80,8 +80,7 @@
                         <select name="wifi">
                             <option value="yes">Có</option>
                             <option value="no">Không</option>                          
-                        </select>
-                        
+                        </select> 
                     </div>
                     <div class="div_des">
                         <label>Capacity</label>
@@ -129,13 +128,14 @@
     <script src="admin/js/charts-home.js"></script>
     <script src="admin/js/front.js"></script>
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 
 <!-- Toastr JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
         
         
-        @if (Session::has('message'))
+    @if (Session::has('success'))
     <script>
         const navType = performance.getEntriesByType("navigation")[0]?.type;
         if (navType !== "back_forward") {
@@ -143,13 +143,13 @@
                 progressBar: true,
                 closeButton: true
             };
-            toastr.success("{{ Session::get('message') }}", 'Success', {
+            toastr.success("{{ Session::get('success') }}", 'Success', {
                 timeOut: 12000,
                 positionClass: 'toast-top-right'
             });
         }
     </script>
-    @php Session::forget('message'); @endphp
+    @php Session::forget('success'); @endphp
     @elseif (Session::has('error'))
         <script>
             const navType = performance.getEntriesByType("navigation")[0]?.type;

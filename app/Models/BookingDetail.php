@@ -17,6 +17,7 @@ class BookingDetail extends Model
         'subtotal',
         'checkin',
         'checkout',
+        'discount',
     ];
 
 

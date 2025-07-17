@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head> 
+    <base href="/public">
     @include('admin.css')
   </head>
   <body>
@@ -17,16 +18,15 @@
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px; ">
                 <tr >
                     <th style="padding: 10px;"> Hotel</th>
-                    <th style="padding: 10px;"> Room ID</th>
+                    
                     <th style="padding: 10px;"> Room Name</th>
                     <th style="padding: 10px;"> Image</th>
                     <th style="padding: 10px;"> Price</th>
                     <th style="padding: 10px;"> Discription</th>
-                    <th style="padding: 10px;"> Wifi</th>
                     <th style="padding: 10px;"> Room Type</th>
                     <th style="padding: 10px;"> Capacity</th>
                     <th style="padding: 10px;"> Total rooms</th>
-                    <th style="padding: 10px;"> Status</th>
+                    
                     
                     
                     
@@ -37,7 +37,7 @@
                 @foreach($data as $room)
                 <tr align="center" style="background-color: white; ">
                     <td>{{$room->hotel->hotel_name}}</td>
-                    <td>{{$room->id}}</td>
+                    
                     <td>{{$room->room_name}}</td>
                     <td>
                         @if($room->images->isNotEmpty())
@@ -49,11 +49,10 @@
                     
                     <td>{{$room->price}}</td>
                     <td>{!! Str::limit($room->description, 50, '...') !!}</td>
-                    <td>{{$room->wifi}}</td>
                     <td>{{$room->type}}</td>
                     <td>{{$room->capacity}}</td>
                     <td>{{$room->total_rooms}}</td>
-                    <td>{{$room->status}}</td>
+                    
                     
                     <td><a class="btn btn-warning" href="{{url('update_room', $room->id)}}">Update</a></td>
                     <td><a class="btn btn-danger" href="{{url('delete_room', $room->id)}}">Delete</a></td>

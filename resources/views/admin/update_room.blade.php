@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
-  <head> 
+<head> 
     <base href="/public">
     @include('admin.css')
 
-    <style type="text/css">
+<style type="text/css">
     label{
         display: inline-block;
         width: 200px;
@@ -26,20 +26,20 @@
     z-index: 10;
     max-height: 300px;
     overflow-y: auto;
-}
+    }
 
-.suggestion-item {
-    display: flex;
-    gap: 10px;
-    padding: 10px;
-    cursor: pointer;
-}
+    .suggestion-item {
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        cursor: pointer;
+    }
 
-.suggestion-item:hover {
-    background-color: #f0f0f0;
-}
-    </style>
-  </head>
+    .suggestion-item:hover {
+        background-color: #f0f0f0;
+    }
+</style>
+</head>
   <body>
     @include('admin.header')   
     
@@ -178,7 +178,7 @@
         }
     </script>
     @php Session::forget('message'); @endphp
-@elseif (Session::has('error'))
+    @elseif (Session::has('error'))
     <script>
         const navType = performance.getEntriesByType("navigation")[0]?.type;
         if (navType !== "back_forward") {
@@ -193,7 +193,7 @@
         }
     </script>
     @php Session::forget('error'); @endphp
-@endif
+    @endif
 
     
 
@@ -205,55 +205,7 @@
         const errorDiv = document.getElementById('hotel-error');
         const form = document.getElementById('room-form');
     
-        // Gợi ý khách sạn
-        // input.addEventListener('input', function () {
-        //     const query = this.value;
-        //     hotelIdInput.value = ''; // reset id khi thay đổi input
-        //     errorDiv.innerText = ''; // xóa lỗi cũ
-    
-        //     if (query.length < 2) {
-        //         suggestions.innerHTML = '';
-        //         return;
-        //     }
-    
-        //     fetch(`/search-hotels?query=${query}`)
-        //         .then(res => res.json())
-        //         .then(data => {
-        //             let html = data.map(hotel => `
-        //                 <div class="suggestion-item" data-id="${hotel.id}" data-name="${hotel.hotel_name}">
-        //                     <img src="/hotelImg/${hotel.hotel_image}" alt="hotel" width="50" height="50">
-        //                     <div class="hotel-info">
-        //                         <div class="name-line"><strong>${hotel.hotel_name}</strong></div>
-        //                         <div class="address-line">${hotel.hotel_address ?? ''}</div>
-        //                         <div class="type-line">${hotel.hotel_city ?? ''}</div>
-        //                     </div>
-        //                 </div>
-        //             `).join('');
-    
-        //             suggestions.innerHTML = html;
-        //             suggestions.style.display = 'block';
-        //         });
-        // });
-    
-        // // Click chọn khách sạn
-        // suggestions.addEventListener('click', function (e) {
-        //     const item = e.target.closest('.suggestion-item');
-        //     if (item) {
-        //         input.value = item.dataset.name;
-        //         hotelIdInput.value = item.dataset.id;
-        //         suggestions.innerHTML = '';
-        //         suggestions.style.display = 'none';
-        //     }
-        // });
-    
-        // // Click ra ngoài
-        // document.addEventListener('click', function (e) {
-        //     if (!input.contains(e.target) && !suggestions.contains(e.target)) {
-        //         suggestions.innerHTML = '';
-        //         suggestions.style.display = 'none';
-        //     }
-        // });
-    
+        
         // Validate khi submit
         form.addEventListener('submit', function (e) {
             let hasError = false;
@@ -309,5 +261,5 @@
             
 
     </script>
-  </body>
+</body>
 </html>

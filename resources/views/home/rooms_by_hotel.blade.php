@@ -25,12 +25,7 @@
                             <li class="nav-item">
                                 <a class="nav-link"style="font-size: 14px" href="{{url('coupon')}}">ưu đãi</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link" style="font-size: 14px" href="{{url('room')}}">Tìm phòng</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" style="font-size: 14px" href="contact.html">Liên hệ ngay</a>
-                            </li>
+                            
 
 
 
@@ -208,8 +203,46 @@
 </div>
 
 
+<div class="feedback-hotel-reviews">
+    <h3>Đánh giá của khách về khách sạn "{{ $hotel->hotel_name }}"</h3>
+    
+    @forelse ($feedbacks as $feedback)
+        <div class="feedback-review-item">
+            <div class="feedback-review-user">
+                <div class="feedback-user-info">
+                    <strong>{{ $feedback->user->name ?? 'Ẩn danh' }}</strong>
+                    <small class="feedback-review-date">{{ $feedback->created_at->format('d/m/Y H:i') }}</small>
+                    @if ($feedback->bookingDetail && $feedback->bookingDetail->room)
+                        <small class="feedback-room-info">Phòng: {{ $feedback->bookingDetail->room->room_name }}</small>
+                    @endif
+                </div>
+            </div>
+            
+            <div class="feedback-review-content">
+                <div class="feedback-rating">
+                    <span class="feedback-stars">
+                        @for ($i = 1; $i <= 5; $i++)
+                            @if ($i <= $feedback->rating)
+                                ⭐
+                            @else
+                                ☆
+                            @endif
+                        @endfor
+                    </span>
+                    <span class="feedback-rating-number">{{ $feedback->rating }}/5</span>
+                </div>
+                <p class="feedback-text">"{{ $feedback->content }}"</p>
+            </div>
+        </div>
+    @empty
+        <div class="feedback-no-reviews">
+            <p>Chưa có đánh giá nào cho khách sạn này.</p>
+        </div>
+    @endforelse
+</div>
 
 
+@include('home.footer')
 <script>
     window.addEventListener('scroll', function () {
         const formBar = document.getElementById('hotelSearchSticky');
@@ -354,6 +387,8 @@
       });
    });
 </script>
+
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const form = document.querySelector(".search-form2");
@@ -387,3 +422,114 @@
         });
     });
 </script>
+<style>
+    .feedback-hotel-reviews {
+    max-width: 1150px;
+    margin: 100px auto;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .feedback-hotel-reviews h3 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #3498db;
+        font-size: 1.5em;
+    }
+
+    .feedback-review-item {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #3498db;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: box-shadow 0.3s ease;
+    }
+
+    .feedback-review-item:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .feedback-review-user {
+        flex: 0 0 200px;
+        padding-right: 15px;
+        border-right: 1px solid #dee2e6;
+    }
+
+    .feedback-user-info {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .feedback-user-info strong {
+        color: #2c3e50;
+        font-size: 1.1em;
+        margin-bottom: 5px;
+    }
+
+    .feedback-review-date {
+        color: #6c757d;
+        font-size: 0.9em;
+    }
+
+    .feedback-room-info {
+        color: #495057;
+        font-size: 0.85em;
+        background: #e9ecef;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-top: 5px;
+        display: inline-block;
+    }
+
+    .feedback-review-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .feedback-rating {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .feedback-stars {
+        font-size: 1.2em;
+        color: #ffc107;
+    }
+
+    .feedback-rating-number {
+        background: #3498db;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.85em;
+        font-weight: bold;
+    }
+
+    .feedback-text {
+        color: #495057;
+        line-height: 1.6;
+        font-style: italic;
+        margin: 0;
+        font-size: 1em;
+    }
+
+    .feedback-no-reviews {
+        text-align: center;
+        padding: 40px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        color: #6c757d;
+        font-style: italic;
+    }
+
+</style>

@@ -25,12 +25,7 @@
                       <li class="nav-item">
                          <a class="nav-link"style="font-size: 14px" href="{{url('coupon')}}">ưu đãi</a>
                       </li>
-                      <li class="nav-item">
-                         <a class="nav-link" style="font-size: 14px" href="{{url('room')}}">Tìm phòng</a>
-                      </li>
-                      <li class="nav-item">
-                         <a class="nav-link" style="font-size: 14px" href="contact.html">Liên hệ ngay</a>
-                      </li>
+                      
 
 
 
@@ -79,7 +74,9 @@
        </div>
     </div>
  </div>
- <section class="hero-banner position-relative d-flex align-items-center" style="height: 500px;">
+
+
+<section class="hero-banner position-relative d-flex align-items-center" style="height: 500px;">
     <div class="bg-image"></div>
 
     <div class="container position-relative z-2">
@@ -135,20 +132,18 @@
     <div class="hotel-list-container">
         
         <aside class="hotel-list-sidebar">
-            <!-- Preview bản đồ nhỏ -->
+            <!-- Preview bản đồ -->
             <div class="sidebar-map-preview" onclick="openMapModal()">
                 <img src="{{ asset('images/ggmap.jpeg') }}" style="width:240px; height:150px" alt="Xem bản đồ vị trí">
                 <div class="map-overlay">
                     <span>XEM VỊ TRÍ</span>
                 </div>
             </div>
-
-            
-
-            <!-- Tìm kiếm và bộ lọc -->
-            <div class="sidebar-search">
-                <input type="text" placeholder="Tìm kiếm văn bản" class="sidebar-search-input">
+          <!-- Tìm kiếm và bộ lọc -->
+            <div class="sidebar-search" style="position: relative;">
+                <input type="text" id="hotel-search-input" placeholder="{{$city}}..." class="sidebar-search-input">
                 <span class="sidebar-search-icon">🔍</span>
+                <ul id="search-suggestions" class="suggestions-dropdown"></ul>
             </div>
             <ul>
                 <h5><strong>Giá mỗi đêm</strong></h5>
@@ -157,15 +152,25 @@
                 <div style="display: flex; justify-content: space-between; margin-top: 10px;">
                     <div>
                         <label for="min_price">TỐI THIỂU</label>
-                        <input type="number" id="min_price" name="min_price" class="form-control" style="width: 100px;">
+                        <input type="number" id="min_price" name="min_price" class="form-control" style="width: 100px;font-size:12px">
                     </div>
                     <div>
                         <label for="max_price">TỐI ĐA</label>
-                        <input type="number" id="max_price" name="max_price" class="form-control" style="width: 100px;" min="0" max="2000000" value="{{ request('max_price', 2000000) }}"> 
+                        <input type="number" id="max_price" name="max_price" class="form-control" style="width: 100px;font-size:12px" min="0" max="2000000" value="{{ request('max_price', 2000000) }}"> 
                     </div>
                 </div>
 
-                <li><a href="#">Theo đánh giá</a></li>
+                <h5><strong>Theo số sao</strong></h5>
+                <div class="rating-filter">
+                    @for ($i = 4; $i >= 1; $i--)
+                        <div>
+                            <input type="checkbox" class="rating-checkbox" value="{{ $i }}" id="rating-{{ $i }}">
+                            <label for="rating-{{ $i }}">
+                                {{ $i }} ⭐ trở lên
+                            </label>
+                        </div>
+                    @endfor
+                </div>
             </ul>
         </aside>
 
@@ -175,7 +180,7 @@
 
             <div class="hotel-list-grid">
                 @forelse ($hotels as $hotel)
-                    <div class="hotel-list-card">
+                    <div class="hotel-list-card" data-average-price="{{ $hotel->average_price }}" data-rating="{{ $hotel->average_rating ?? 0 }}" data-id="{{ $hotel->id }}">
                         <div class="hotel-info-left">
                             <img src="{{ asset('hotelImg/' . $hotel->hotel_image) }}"
                                  alt="{{ $hotel->hotel_name }}"
@@ -188,7 +193,7 @@
                                 </h3>
 
                                 <p class="hotel-list-rating">
-                                    ⭐ Đánh giá: {{ isset($hotel->hotel_rating) ? $hotel->hotel_rating : 5 }} / 5
+                                    ⭐ Đánh giá trung bình: {{ $hotel->average_rating }} / 5
                                 </p>
                                 <p class="hotel-list-address">📍 Địa chỉ: {{ $hotel->hotel_address }}</p>
                                 <p class="hotel-list-price">
@@ -205,7 +210,10 @@
                     <p>Không có khách sạn nào tại {{ $city }}.</p>
                 @endforelse
             </div>
+            <p id="no-result-msg" style="display:none; margin: 20px; color: red;">Không có khách sạn nào phù hợp với bộ lọc.</p>
         </main>
+        
+
     </div>
 </div>
 
@@ -240,29 +248,11 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
  @include('home.footer')
  
 
 
-      <script> // sticky form roll
+<script> // sticky form roll
          window.addEventListener('scroll', function() {
             const form = document.getElementById('searchForm');
             const triggerPoint = 400; // khi scroll xuống 400px
@@ -273,10 +263,10 @@
                   form.classList.remove('sticky');
             }
          });
-      </script>
-      <script> // Auto fill khi ấn "Xem tất cả các phòng"
-            document.addEventListener('DOMContentLoaded', function () {
-                const buttons = document.querySelectorAll('.check-room-btn');
+</script>
+<script>//date pick
+    document.addEventListener('DOMContentLoaded', function () {
+    const buttons = document.querySelectorAll('.check-room-btn');
 
                 let checkinPicker, checkoutPicker;
 
@@ -321,11 +311,14 @@
                         checkinPicker.open();
                     });
                 });
-            });
-        </script>
+                
+    }); // Auto fill khi ấn "Xem tất cả các phòng"
+            
+</script>
          
-         <!-- Validate Client = Modal popup-->
-         <script>
+         
+ <script>//validate
+    
             document.addEventListener('DOMContentLoaded', function () {
                 const form = document.getElementById('searchForm');
                 const modal = new bootstrap.Modal(document.getElementById('warningModal'));
@@ -356,23 +349,20 @@
                     }
                 });
             });
-        </script>
-        <!-- Slider giá -->
-        <script>
+</script>
+
+<script>//loc theo slide gia tien va rating
     document.addEventListener('DOMContentLoaded', function () {
         const slider = document.getElementById('price-slider');
         const minInput = document.getElementById('min_price');
         const maxInput = document.getElementById('max_price');
 
-        const MAX_VALUE = 100000000;
+        const MAX_VALUE = 1000000;
 
         noUiSlider.create(slider, {
-            start: [
-                getQueryParam('min_price') || 0,
-                getQueryParam('max_price') || MAX_VALUE
-            ],
+            start: [0, MAX_VALUE],
             connect: true,
-            step: 100000,
+            step: 50000,
             range: {
                 'min': 0,
                 'max': MAX_VALUE
@@ -382,46 +372,131 @@
                 from: value => Number(value)
             }
         });
+        document.querySelectorAll('.rating-checkbox').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const min = parseInt(minInput.value);
+                const max = parseInt(maxInput.value);
+                filterHotels(min, max);
+            });
+        });
 
-        // Cập nhật input mỗi khi kéo slider
+        // Update input fields
         slider.noUiSlider.on('update', function (values) {
             minInput.value = values[0];
             maxInput.value = values[1];
         });
 
-        // Gọi hàm lọc (reload trang) mỗi khi người dùng thả chuột sau khi kéo slider
-        slider.noUiSlider.on('change', function (values) {
-            autoFilter(values[0], values[1]);
-        });
+        // Main filter logic: no reload
+        function filterHotels(minPrice, maxPrice) {
+            const checkedRatings = Array.from(document.querySelectorAll('.rating-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
 
-        // Người dùng nhập min → cập nhật lại slider và giữ nguyên max
-        minInput.addEventListener('blur', function () {
-            slider.noUiSlider.set([this.value, maxInput.value]);
-            autoFilter(this.value, maxInput.value);
-        });
+            let visibleCount = 0;
 
-        // Người dùng nhập max → cập nhật lại slider
-        maxInput.addEventListener('blur', function () {
-            slider.noUiSlider.set([minInput.value, this.value]);
-            autoFilter(minInput.value, this.value);
-        });
+            document.querySelectorAll('.hotel-list-card').forEach(card => {
+                const avg = parseInt(card.getAttribute('data-average-price'));
+                const rating = parseFloat(card.getAttribute('data-rating')) || 0;
 
-        function autoFilter(min, max) {
-            const params = new URLSearchParams(window.location.search);
-            params.set('min_price', min);
-            params.set('max_price', max);
-            window.location.search = params.toString();
+                const inPriceRange = avg >= minPrice && avg <= maxPrice;
+                const inRating = checkedRatings.length === 0 || checkedRatings.some(r => rating >= r);
+
+                const shouldShow = inPriceRange && inRating;
+                card.style.display = shouldShow ? '' : 'none';
+
+                if (shouldShow) visibleCount++;
+            });
+
+            // Ẩn/hiện dòng "Không có kết quả"
+            const noResultMsg = document.getElementById('no-result-msg');
+            if (visibleCount === 0) {
+                noResultMsg.style.display = 'block';
+            } else {
+                noResultMsg.style.display = 'none';
+            }
         }
 
-        function getQueryParam(name) {
-            const params = new URLSearchParams(window.location.search);
-            return params.get(name);
+        slider.noUiSlider.on('change', function (values) {
+            const min = parseInt(values[0]);
+            const max = parseInt(values[1]);
+            filterHotels(min, max);
+        });
+
+        // Update slider when blur input
+        minInput.addEventListener('blur', function () {
+            slider.noUiSlider.set([this.value, maxInput.value]);
+            filterHotels(parseInt(this.value), parseInt(maxInput.value));
+        });
+
+        maxInput.addEventListener('blur', function () {
+            slider.noUiSlider.set([minInput.value, this.value]);
+            filterHotels(parseInt(minInput.value), parseInt(this.value));
+        });
+    });
+</script>
+<script>//suggest
+    document.addEventListener('DOMContentLoaded', function () {
+        const input = document.getElementById('hotel-search-input');
+        const suggestionBox = document.getElementById('search-suggestions');
+        const city = "{{ urlencode($city) }}";
+
+        input.addEventListener('input', function () {
+            const query = this.value.trim();
+            if (query.length < 1) {
+                suggestionBox.innerHTML = '';
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            fetch(`/hotels/search/${city}?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    suggestionBox.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(hotel => {
+                            const li = document.createElement('li');
+                            li.textContent = `${hotel.hotel_name} - ${hotel.hotel_address}`;
+                            li.addEventListener('click', () => {
+                                input.value = hotel.hotel_name;
+                                suggestionBox.innerHTML = '';
+                                suggestionBox.style.display = 'none';
+                                scrollToHotelCard(hotel.id); // Tự scroll đến khách sạn nếu muốn
+                            });
+                            suggestionBox.appendChild(li);
+                        });
+                        suggestionBox.style.display = 'block';
+                    } else {
+                        suggestionBox.style.display = 'none';
+                    }
+                });
+        });
+
+        // Ẩn dropdown khi click ra ngoài
+        document.addEventListener('click', function (e) {
+            if (!input.contains(e.target) && !suggestionBox.contains(e.target)) {
+                suggestionBox.style.display = 'none';
+            }
+        });
+
+        function scrollToHotelCard(id) {
+            const target = document.querySelector(`.hotel-list-card[data-id="${id}"]`);
+            if (target) {
+                const offset = 100;
+                const y = target.getBoundingClientRect().top + window.scrollY - offset;
+                window.scrollTo({ top: y, behavior: 'smooth',  });
+
+                // Thêm hiệu ứng highlight
+                target.classList.add('highlight-flash');
+
+                // Gỡ bỏ sau 2s
+                setTimeout(() => {
+                    target.classList.remove('highlight-flash');
+                }, 2000);
+            }
         }
     });
 </script>
 
-
-<script> //slider gia tien
+<script> //gg map overlay
             let map;
             let markers = [];
 
@@ -528,7 +603,7 @@
       });
    });
 </script>
-<script>
+<script>// focus
     document.addEventListener("DOMContentLoaded", function () {
         const form = document.querySelector(".search-form");
         const inputs = form.querySelectorAll("input, select");
@@ -562,7 +637,17 @@
     });
 </script>
 
+<style>
+    .highlight-flash {
+    animation: flashBorder 1s ease-in-out 2;
+    }
 
+    @keyframes flashBorder {
+        0%   { box-shadow: 0 0 0px rgba(255, 193, 7, 0); }
+        50%  { box-shadow: 0 0 10px 5px rgba(255, 193, 7, 0.8); }
+        100% { box-shadow: 0 0 0px rgba(255, 193, 7, 0); }
+    }
+</style>
 
 
 

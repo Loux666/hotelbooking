@@ -93,89 +93,89 @@
         </p>
         
         <div class="sold-out-actions">
-            <button class="btn-primary">Chọn phòng khác</button>
-            <button class="btn-secondary">Thay đổi ngày</button>
+            
+            <button class="btn-secondary" onclick="window.close()">Quay lại</button>
         </div>
     </div>
 </div>
 
 <style>
-.room-sold-out {
-    background: #f8f9fa;
-    border: 2px solid #e74c3c;
-    border-radius: 12px;
-    padding: 30px;
-    text-align: center;
-    margin: 20px 0;
-}
+    .room-sold-out {
+        background: #f8f9fa;
+        border: 2px solid #e74c3c;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        margin: 20px 0;
+    }
 
-.sold-out-content {
-    max-width: 400px;
-    margin: 0 auto;
-}
+    .sold-out-content {
+        max-width: 400px;
+        margin: 0 auto;
+    }
 
-.sold-out-icon {
-    font-size: 48px;
-    margin-bottom: 15px;
-}
+    .sold-out-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+    }
 
-.sold-out-title {
-    color: #e74c3c;
-    font-size: 24px;
-    margin-bottom: 15px;
-    font-weight: 600;
-}
+    .sold-out-title {
+        color: #e74c3c;
+        font-size: 24px;
+        margin-bottom: 15px;
+        font-weight: 600;
+    }
 
-.sold-out-text {
-    color: #6c757d;
-    font-size: 16px;
-    line-height: 1.5;
-    margin-bottom: 25px;
-}
+    .sold-out-text {
+        color: #6c757d;
+        font-size: 16px;
+        line-height: 1.5;
+        margin-bottom: 25px;
+    }
 
-.sold-out-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.btn-primary {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.btn-primary:hover {
-    background: #0056b3;
-}
-
-.btn-secondary {
-    background: #6c757d;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.btn-secondary:hover {
-    background: #545b62;
-}
-
-@media (max-width: 480px) {
     .sold-out-actions {
-        flex-direction: column;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
     }
-    
-    .btn-primary, .btn-secondary {
-        width: 100%;
+
+    .btn-primary {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.3s;
     }
+
+    .btn-primary:hover {
+        background: #0056b3;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .btn-secondary:hover {
+        background: #545b62;
+    }
+
+    @media (max-width: 480px) {
+        .sold-out-actions {
+            flex-direction: column;
+        }
+        
+        .btn-primary, .btn-secondary {
+            width: 100%;
+        }
 }

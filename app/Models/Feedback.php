@@ -14,6 +14,8 @@ class Feedback extends Model
         'hotel_id',
         'content',
         'rating',
+        'booking_id',
+        'booking_detail_id',
     ];
 
     // Feedback thuộc về người dùng
@@ -26,5 +28,9 @@ class Feedback extends Model
     public function hotel()
     {
         return $this->belongsTo(Hotel::class);
+    }
+    public function bookingDetail()
+    {
+        return $this->belongsTo(BookingDetail::class, 'booking_detail_id');
     }
 }

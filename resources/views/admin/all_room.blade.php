@@ -67,34 +67,43 @@
     </div>
 
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+ <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 
 <!-- Toastr JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    
-    
-    @if (Session::has('message'))
-        <script>
+        
+        
+    @if (Session::has('success'))
+    <script>
+        const navType = performance.getEntriesByType("navigation")[0]?.type;
+        if (navType !== "back_forward") {
             toastr.options = {
-                progressBar: true, 
+                progressBar: true,
                 closeButton: true
             };
-            toastr.success("{{ Session::get('message') }}", 'Success', {
+            toastr.success("{{ Session::get('success') }}", 'Success', {
                 timeOut: 12000,
                 positionClass: 'toast-top-right'
             });
-        </script>
+        }
+    </script>
+    @php Session::forget('success'); @endphp
     @elseif (Session::has('error'))
         <script>
-            toastr.options = {
-                progressBar: true, 
-                closeButton: true
-            };
-            toastr.error("{{ Session::get('error') }}", 'Error', {
-                timeOut: 12000,
-                positionClass: 'toast-top-right'
-            });
+            const navType = performance.getEntriesByType("navigation")[0]?.type;
+            if (navType !== "back_forward") {
+                toastr.options = {
+                    progressBar: true,
+                    closeButton: true
+                };
+                toastr.error("{{ Session::get('error') }}", 'Error', {
+                    timeOut: 12000,
+                    positionClass: 'toast-top-right'
+                });
+            }
         </script>
+        @php Session::forget('error'); @endphp
     @endif
     
 
