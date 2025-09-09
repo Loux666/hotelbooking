@@ -23,7 +23,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(Schedule $schedule): void
     {
 
-        URL::forceScheme('https');
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
         $schedule->command(DeleteExpiredBookings::class)->everyMinute();
     }
 }
