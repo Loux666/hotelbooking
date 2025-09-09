@@ -48,7 +48,7 @@ Route::middleware(['auth', 'usertype:admin'])->group(function () {
     Route::post('/manager/update/{id}', [AdminController::class, 'updateManager'])->name('admin.manager.update');
     Route::post('/manager/delete/{id}', [AdminController::class, 'deleteManager'])->name('admin.manager.delete');
 
-    Route::get('/coupon', [AdminController::class, 'coupon'])->name('coupon');
+
     Route::get('/coupon/manage', [AdminController::class, 'couponManage'])->name('coupon.manage');
     Route::get('/coupon/add', [AdminController::class, 'addCoupon'])->name('coupon.add');
     Route::post('/coupon/store', [AdminController::class, 'storeCoupon'])->name('coupon.store');
@@ -94,6 +94,7 @@ Route::get('/all_hotels', [HotelController::class, 'all_hotel'])->name('hotels.l
 Route::get('/hotels/city/{city}', [HotelController::class, 'listByCity'])->name('hotels.by_city');
 Route::get('/hotels/{id}', [HotelController::class, 'show'])->name('hotel.show');
 Route::get('/hotels/search/{city}', [HotelController::class, 'searchHotelsByCity']);
+Route::get('/coupon', [AdminController::class, 'coupon'])->name('coupon');
 
 //Cart
 Route::middleware(['auth'])->prefix('cart')->group(function () {
